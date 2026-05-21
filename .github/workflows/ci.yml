@@ -15,22 +15,20 @@ jobs:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - name: Set up Python
-        run: uv python install ${{ matrix.python-version }}
+          python-version: ${{ matrix.python-version }}
       - name: Install package
-        run: uv pip install --system -e ".[dev]"
+        run: uv sync --extra dev
       - name: Lint with ruff
-        run: ruff check .
+        run: uv run ruff check .
       - name: Check formatting
-        run: ruff format --check .
+        run: uv run ruff format --check .
       - name: Run pytest
-        run: pytest --cov=bottom_50_tax_analysis --cov-report=term-missing
+        run: uv run pytest --cov=bottom_50_tax_analysis --cov-report=term-missing
       - name: Generate fallback results.json
-        run: bottom50-generate --output data/results.json
+        run: uv run bottom50-generate --output data/results.json
 
   frontend:
     name: Frontend build
@@ -38,17 +36,15 @@ jobs:
     needs: python
     steps:
       - uses: actions/checkout@v4
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - name: Set up Python
-        run: uv python install 3.13
+          python-version: "3.13"
       - name: Install Python package (for data generation)
-        run: uv pip install --system -e .
+        run: uv sync
       - name: Regenerate frontend data (fallback mode)
         run: |
-          bottom50-generate --output data/results.json
+          uv run bottom50-generate --output data/results.json
           cp data/results.json frontend/data/results.json
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
