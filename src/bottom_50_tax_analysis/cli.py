@@ -42,9 +42,9 @@ def _build_fallback_payload(threshold: float, year: int) -> dict[str, Any]:
 
 
 def _build_live_payload(year: int) -> dict[str, Any]:
-    from . import simulation  # lazy import
-
     import numpy as np
+
+    from . import simulation  # lazy import — pulls in policyengine_us
 
     data = simulation.extract_tax_unit_data(year=year)
     # PolicyEngine's ``income_tax`` is net of refundable credits and can be
