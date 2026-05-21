@@ -76,6 +76,9 @@ def _build_live_payload(year: int) -> dict[str, Any]:
         weight=data["weight"],
         threshold=threshold,
     )
+    # Always carry the Tax Foundation / IRS SOI 2023 snapshot alongside the
+    # live PolicyEngine numbers so the frontend can show a PE-vs-SOI panel.
+    snap = fallback.tax_foundation_snapshot()
     return {
         "mode": "live",
         "version": __version__,
@@ -94,6 +97,14 @@ def _build_live_payload(year: int) -> dict[str, Any]:
             "average_tax_cut_dollars": affected["average_tax_cut"],
         },
         "reform_description": reforms.describe(threshold=threshold, year=year),
+        "tax_foundation_2023": {
+            "tax_year": snap["tax_year"],
+            "source": snap["source"],
+            "snapshot_version": snap["snapshot_version"],
+            "income_tax": snap["income_tax"],
+            "income_plus_payroll": snap["income_plus_payroll"],
+            "zero_below_bottom_50": snap["zero_below_bottom_50"],
+        },
     }
 
 

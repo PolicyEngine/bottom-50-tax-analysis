@@ -3,6 +3,7 @@
 import { useState } from "react";
 import data from "../data/results.json";
 import { ComparisonTable } from "./components/ComparisonTable";
+import { PolicyEngineVsSOIPanel } from "./components/PolicyEngineVsSOIPanel";
 import { ShareChart } from "./components/ShareChart";
 import { ThresholdSlider } from "./components/ThresholdSlider";
 import { Toggle } from "./components/Toggle";
@@ -125,6 +126,23 @@ export default function Home() {
             source={data.source}
           />
         </section>
+
+        {data.tax_foundation_2023 && (
+          <section className="mb-12">
+            <h2
+              className="text-2xl font-semibold mb-4"
+              style={{ color: "var(--foreground)" }}
+            >
+              How PolicyEngine compares to the IRS SOI tables
+            </h2>
+            <PolicyEngineVsSOIPanel
+              peDist={data.income_tax}
+              soi={data.tax_foundation_2023}
+              peYear={data.year}
+              soiYear={data.tax_foundation_2023.tax_year}
+            />
+          </section>
+        )}
 
         <section
           className="rounded-xl border p-6"

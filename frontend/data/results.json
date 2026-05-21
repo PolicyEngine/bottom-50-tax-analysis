@@ -2,7 +2,7 @@
   "mode": "live",
   "version": "0.1.0",
   "snapshot_version": "live-policyengine-us",
-  "generated_at": "2026-05-21T15:01:01.474548+00:00",
+  "generated_at": "2026-05-21T15:15:48.452310+00:00",
   "year": 2026,
   "source": "PolicyEngine-US Enhanced CPS, calibrated 2026",
   "income_tax": {
@@ -99,5 +99,48 @@
     "units_affected_millions": 100.62605024762297,
     "average_tax_cut_dollars": 440.6604082132304
   },
-  "reform_description": "Zero out federal income tax for all tax units with AGI under $43,732 in 2026."
+  "reform_description": "Zero out federal income tax for all tax units with AGI under $43,732 in 2026.",
+  "tax_foundation_2023": {
+    "tax_year": 2023,
+    "source": "IRS SOI 2023 (via Tax Foundation, Mar 2025); payroll-tax distribution derived from TPC Briefing Book.",
+    "snapshot_version": "2025-03-tax-foundation",
+    "income_tax": {
+      "bottom_50_share": 0.03,
+      "top_50_share": 0.97,
+      "top_25_share": 0.872,
+      "top_10_share": 0.72,
+      "top_5_share": 0.607,
+      "top_1_share": 0.404,
+      "bottom_50_cutoff": 50339,
+      "top_25_cutoff": 99857,
+      "top_10_cutoff": 169800,
+      "top_5_cutoff": 252840,
+      "top_1_cutoff": 663164,
+      "average_tax_rate_top_1": 0.262,
+      "average_tax_rate_bottom_50": 0.034,
+      "total_tax_billions": 2140.0
+    },
+    "income_plus_payroll": {
+      "bottom_50_share": 0.13,
+      "top_50_share": 0.87,
+      "top_25_share": 0.74,
+      "top_10_share": 0.59,
+      "top_5_share": 0.49,
+      "top_1_share": 0.3,
+      "bottom_50_cutoff": 50339,
+      "top_25_cutoff": 99857,
+      "top_10_cutoff": 169800,
+      "top_5_cutoff": 252840,
+      "top_1_cutoff": 663164,
+      "total_tax_billions": 3700.0
+    },
+    "zero_below_bottom_50": {
+      "tax_year": 2026,
+      "threshold": 57000,
+      "revenue_cost_billions": 75.0,
+      "units_affected_millions": 86.0,
+      "average_tax_cut_dollars": 870.0,
+      "note": "Projected from 2023 SOI: ~$64B income tax paid by bottom 50%, inflated by ~4% nominal wage growth/year through 2026."
+    }
+  }
 }
