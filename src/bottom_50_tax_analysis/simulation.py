@@ -15,6 +15,7 @@ units, the revenue cost is identical to the weighted sum of their
 baseline ``income_tax``. Behavioural and state-tax interactions are not
 modelled.
 """
+
 from __future__ import annotations
 
 import numpy as np
