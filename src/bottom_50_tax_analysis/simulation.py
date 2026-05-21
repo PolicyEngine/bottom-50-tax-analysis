@@ -33,8 +33,27 @@ def _require_policyengine_us() -> None:
         ) from exc
 
 
+DATASETS = {
+    "cps_2024": "hf://policyengine/policyengine-us-data/cps_2024.h5",
+    "enhanced_cps_2024": "hf://policyengine/policyengine-us-data/enhanced_cps_2024.h5",
+    "pooled_3_year_cps_2023": "hf://policyengine/policyengine-us-data/pooled_3_year_cps_2023.h5",
+}
+
+# Default dataset for SOI comparison: plain Census CPS uprated by PolicyEngine.
+# It produces total federal income tax within 1% of IRS SOI's published
+# tabulation, because its underlying data is Form-1040-equivalent.
+# The Enhanced CPS adds synthetic high-net-worth tax units calibrated to
+# Saez/Zucman top-income shares — useful for distributional analysis at the
+# top, but produces total tax ~2.4× SOI which is not what we want for an
+# IRS replication.
+DEFAULT_DATASET = "cps_2024"
+
+
 def extract_tax_unit_data(
-    year: int = 2026, *, filers_only: bool = True
+    year: int = 2026,
+    *,
+    filers_only: bool = True,
+    dataset: str = DEFAULT_DATASET,
 ) -> dict[str, np.ndarray]:
     """Run the baseline US microsimulation and return per-tax-unit arrays.
 
@@ -45,8 +64,15 @@ def extract_tax_unit_data(
     filers_only : bool, default True
         If True, drop tax units where ``tax_unit_is_filer`` is False so the
         population matches IRS SOI (which only tabulates filed returns).
-        Non-filer tax units in the Enhanced CPS otherwise pull the median
-        AGI down and depress the bottom-50 share.
+    dataset : str, default "cps_2024"
+        Which PolicyEngine-US dataset to use. ``cps_2024`` is the plain
+        Census CPS uprated by PE; it matches IRS SOI totals to within 1%
+        but understates the very top of the income distribution because
+        CPS is top-coded. ``enhanced_cps_2024`` (PE's standard) adds
+        synthetic high-net-worth tax units calibrated to Saez/Zucman
+        top-income shares — total federal income tax comes out ~2.4× IRS
+        SOI, which is intentional in PE's design but is not an apples-
+        to-apples match for SOI tabulations.
 
     Returns
     -------
@@ -57,7 +83,9 @@ def extract_tax_unit_data(
     _require_policyengine_us()
     from policyengine_us import Microsimulation  # type: ignore[import-not-found]
 
-    sim = Microsimulation()
+    if dataset not in DATASETS:
+        raise ValueError(f"Unknown dataset {dataset!r}. Choices: {sorted(DATASETS)}.")
+    sim = Microsimulation(dataset=DATASETS[dataset])
     agi = np.asarray(sim.calc("adjusted_gross_income", period=year), dtype=float)
     # ``income_tax`` is net of refundable credits — PE's standard measure,
     # what you'd use for a budget score. Can be negative for refund recipients.
@@ -87,4 +115,5 @@ def extract_tax_unit_data(
         "weight": weight[mask],
         "population_scope": "filers" if filers_only else "all_tax_units",
         "filer_share": float(weight[is_filer].sum() / weight.sum()),
+        "dataset": dataset,
     }

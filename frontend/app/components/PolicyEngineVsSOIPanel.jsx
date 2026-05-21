@@ -66,14 +66,25 @@ export function PolicyEngineVsSOIPanel({ peDist, soi, peYear, soiYear }) {
         >
           Both series report gross federal individual income tax (regular tax
           + AMT + NIIT + cap-gains tax, after non-refundable credits, before
-          refundable credits) on filed returns. Population scope and tax
-          definition have been aligned. The remaining gap reflects
-          PolicyEngine&rsquo;s Enhanced CPS calibration — it targets top-income
-          shares from Piketty/Saez/Zucman administrative data, which place
-          more income (and tax) at the top than IRS Form 1040 tabulations.
-          PE&rsquo;s 2026 top-1% mean AGI is ~$7.2M; IRS SOI&rsquo;s 2023 top-1%
-          mean AGI is ~$2.1M. Both are defensible measurements of different
-          underlying concepts.
+          refundable credits) on filed returns. PE is uprated to{" "}
+          {peYear} from the plain Census CPS — its total revenue ($2.13T)
+          matches the IRS SOI {soiYear} tabulation ($2.14T) to within
+          1%. The bottom-50% AGI cutoff and top-1% cutoff are also close.
+        </p>
+        <p
+          className="text-sm mt-2"
+          style={{ color: "var(--muted-foreground)" }}
+        >
+          The gap that remains — PE understates the top-1% share —
+          reflects a known CPS limitation: surveys top-code very high
+          incomes, so the most concentrated tail isn&rsquo;t captured.
+          PolicyEngine&rsquo;s default <code>enhanced_cps_2024</code>{" "}
+          dataset adds synthetic high-income tax units to fix this for
+          distributional analysis, but the imputation overshoots
+          (total revenue ~2.4× SOI). For an apples-to-apples replication
+          of SOI&rsquo;s administrative tabulation, plain CPS is the
+          closer match. Pass <code>--dataset enhanced_cps_2024</code> to{" "}
+          <code>bottom50-generate</code> to see the alternative.
         </p>
       </div>
 

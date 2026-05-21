@@ -50,7 +50,7 @@ def test_build_payload_live_carries_tax_foundation_snapshot(monkeypatch):
 
     from bottom_50_tax_analysis import cli, simulation
 
-    def fake_extract(year, *, filers_only=True):
+    def fake_extract(year, *, filers_only=True, dataset="cps_2024"):
         # 5 tax units, ascending AGI. The bottom two receive net refunds
         # (refundable EITC/CTC > positive liability) so net bottom-50 share
         # comes out negative; gross income tax (before refundable credits)
@@ -63,6 +63,7 @@ def test_build_payload_live_carries_tax_foundation_snapshot(monkeypatch):
             "weight": np.array([1.0, 1, 1, 1, 1]),
             "population_scope": "filers" if filers_only else "all_tax_units",
             "filer_share": 0.82,
+            "dataset": dataset,
         }
 
     monkeypatch.setattr(simulation, "extract_tax_unit_data", fake_extract)
@@ -88,8 +89,9 @@ def test_build_payload_respects_include_non_filers(monkeypatch):
 
     seen = {}
 
-    def fake_extract(year, *, filers_only=True):
+    def fake_extract(year, *, filers_only=True, dataset="cps_2024"):
         seen["filers_only"] = filers_only
+        seen["dataset"] = dataset
         return {
             "agi": np.array([1.0, 2, 3, 4, 5]),
             "income_tax_gross": np.array([0.0, 1, 2, 3, 4]),
@@ -98,6 +100,7 @@ def test_build_payload_respects_include_non_filers(monkeypatch):
             "weight": np.array([1.0, 1, 1, 1, 1]),
             "population_scope": "filers" if filers_only else "all_tax_units",
             "filer_share": 0.82,
+            "dataset": dataset,
         }
 
     monkeypatch.setattr(simulation, "extract_tax_unit_data", fake_extract)

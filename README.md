@@ -82,20 +82,38 @@ arithmetic.
 
 ## Caveats
 
-- The Enhanced CPS is a calibrated survey, not an administrative tabulation.
-  Cell-level estimates differ from IRS SOI publications, especially at the
-  top of the distribution: PolicyEngine targets top-income shares from
-  Piketty/Saez/Zucman, which place more income (and therefore tax) at the
-  top than the IRS Form 1040 tabulation. PE's 2026 top-1% mean AGI is
-  ~$7.2M; IRS SOI's 2023 top-1% mean AGI is ~$2.1M. The PE share for the
-  top 1% is correspondingly higher (~67% vs SOI's ~40%).
-- Methodologically apples-to-apples vs SOI requires (a) restricting to tax
-  filers via `tax_unit_is_filer`, (b) using
-  `income_tax_before_refundable_credits` rather than `income_tax`, and
-  (c) treating tax_unit_weight as the only calibrated weight. The CLI does
-  all three by default.
-- Behavioural responses are not modelled. The "zero out tax below the 50th
-  percentile" revenue cost is a static estimate.
+- **Dataset choice matters a lot.** PE-US ships several datasets, and they
+  produce different totals when summed against IRS SOI's published
+  tabulations:
+
+  | Dataset | Total income tax (2026) | Bottom-50 share | Top-1 share |
+  | --- | ---: | ---: | ---: |
+  | `cps_2024` (default here) | $2.13T | 4.9% | 23.4% |
+  | `enhanced_cps_2024` (PE standard) | $5.09T | 1.6% | 67.4% |
+  | IRS SOI 2023 (Tax Foundation) | $2.14T | 3.0% | 40.4% |
+
+  The plain `cps_2024` matches SOI's total revenue almost exactly because
+  its underlying records are Form-1040-equivalent. It understates the
+  top-1% share because CPS top-codes very high incomes (the highest AGI
+  in the file is ~$3M).
+
+  The `enhanced_cps_2024` adds synthetic high-net-worth tax units (the
+  highest AGI in the file is ~$30B). This is intentional in PE's design
+  for distributional analysis, but its total revenue is roughly 2.4× SOI,
+  so the percentile shares aren't an apples-to-apples match for an SOI
+  replication. PE's website distributional charts use the Enhanced CPS;
+  the bottom-50% / top-1% tax-share comparisons here use plain CPS by
+  choice. Pass `--dataset enhanced_cps_2024` to switch.
+- **Tax-definition alignment.** The repo uses
+  `income_tax_before_refundable_credits` for the SOI comparison: regular
+  tax + AMT + NIIT + cap-gains tax, after non-refundable credits, before
+  refundable. This is the line that maps to Tax Foundation's "Total
+  Income Tax".
+- **Population.** Default filters to `tax_unit_is_filer == True` (~81%
+  of Enhanced CPS / ~89% of plain CPS tax units) so the comparison
+  population matches IRS SOI, which tabulates filed returns only.
+- Behavioural responses are not modelled. The "zero out tax below the
+  50th percentile" revenue cost is a static estimate.
 - Payroll-tax incidence is debated. The repo reports the employee-side
   share (statutory incidence); economic incidence (incl. employer side)
   would roughly double payroll's contribution to the bottom 50%'s burden.

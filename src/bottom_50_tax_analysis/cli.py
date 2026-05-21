@@ -41,10 +41,19 @@ def _build_fallback_payload(threshold: float, year: int) -> dict[str, Any]:
     }
 
 
-def _build_live_payload(year: int, *, filers_only: bool = True) -> dict[str, Any]:
+def _build_live_payload(
+    year: int,
+    *,
+    filers_only: bool = True,
+    dataset: str | None = None,
+) -> dict[str, Any]:
     from . import simulation  # lazy import — pulls in policyengine_us
 
-    data = simulation.extract_tax_unit_data(year=year, filers_only=filers_only)
+    if dataset is None:
+        dataset = simulation.DEFAULT_DATASET
+    data = simulation.extract_tax_unit_data(
+        year=year, filers_only=filers_only, dataset=dataset
+    )
     # ``income_tax_gross`` (= income_tax_before_refundable_credits) is the
     # apples-to-apples match for IRS SOI's "Total Income Tax" distribution.
     # ``income_tax_net`` is PE's standard measure, net of refundable credits.
@@ -80,12 +89,11 @@ def _build_live_payload(year: int, *, filers_only: bool = True) -> dict[str, Any
         "generated_at": datetime.now(UTC).isoformat(),
         "year": year,
         "source": (
-            "PolicyEngine-US Enhanced CPS, calibrated 2026, "
+            f"PolicyEngine-US ({data['dataset']}), {year}, "
             f"restricted to {data['population_scope']} "
             f"({data['filer_share'] * 100:.0f}% of all tax units)"
-            if data["population_scope"] == "filers"
-            else "PolicyEngine-US Enhanced CPS, calibrated 2026, all tax units"
         ),
+        "dataset": data["dataset"],
         "population_scope": data["population_scope"],
         "filer_share_of_all_tax_units": data["filer_share"],
         "income_tax": gross_income_dist,
@@ -110,10 +118,16 @@ def _build_live_payload(year: int, *, filers_only: bool = True) -> dict[str, Any
     }
 
 
-def build_payload(*, live: bool, year: int, filers_only: bool = True) -> dict[str, Any]:
+def build_payload(
+    *,
+    live: bool,
+    year: int,
+    filers_only: bool = True,
+    dataset: str | None = None,
+) -> dict[str, Any]:
     """Build the JSON payload — exposed for testing."""
     if live:
-        return _build_live_payload(year=year, filers_only=filers_only)
+        return _build_live_payload(year=year, filers_only=filers_only, dataset=dataset)
     return _build_fallback_payload(threshold=57_000, year=year)
 
 
@@ -149,10 +163,23 @@ def main(argv: list[str] | None = None) -> int:
             "population is restricted to filers to match IRS SOI."
         ),
     )
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default=None,
+        help=(
+            "PolicyEngine-US dataset to use for --live. Default: cps_2024 "
+            "(matches IRS SOI totals). Use enhanced_cps_2024 for PE's "
+            "standard distributional analysis with synthetic top-end."
+        ),
+    )
     args = parser.parse_args(argv)
 
     payload = build_payload(
-        live=args.live, year=args.year, filers_only=not args.include_non_filers
+        live=args.live,
+        year=args.year,
+        filers_only=not args.include_non_filers,
+        dataset=args.dataset,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2))
