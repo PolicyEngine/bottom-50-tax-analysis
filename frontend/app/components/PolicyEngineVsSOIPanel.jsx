@@ -64,10 +64,16 @@ export function PolicyEngineVsSOIPanel({ peDist, soi, peYear, soiYear }) {
           className="text-sm mt-1"
           style={{ color: "var(--muted-foreground)" }}
         >
-          Both series report gross federal individual income tax. Differences
-          come from population scope (PE includes non-filers; SOI does not),
-          calendar year (2026 projection vs 2023 actuals), and PE&rsquo;s calibrated
-          Enhanced CPS vs the IRS administrative tabulation.
+          Both series report gross federal individual income tax (regular tax
+          + AMT + NIIT + cap-gains tax, after non-refundable credits, before
+          refundable credits) on filed returns. Population scope and tax
+          definition have been aligned. The remaining gap reflects
+          PolicyEngine&rsquo;s Enhanced CPS calibration — it targets top-income
+          shares from Piketty/Saez/Zucman administrative data, which place
+          more income (and tax) at the top than IRS Form 1040 tabulations.
+          PE&rsquo;s 2026 top-1% mean AGI is ~$7.2M; IRS SOI&rsquo;s 2023 top-1%
+          mean AGI is ~$2.1M. Both are defensible measurements of different
+          underlying concepts.
         </p>
       </div>
 

@@ -42,37 +42,31 @@ def _build_fallback_payload(threshold: float, year: int) -> dict[str, Any]:
 
 
 def _build_live_payload(year: int, *, filers_only: bool = True) -> dict[str, Any]:
-    import numpy as np
-
     from . import simulation  # lazy import — pulls in policyengine_us
 
     data = simulation.extract_tax_unit_data(year=year, filers_only=filers_only)
-    # PolicyEngine's ``income_tax`` is net of refundable credits and can be
-    # negative for tax units that receive refunds. The Tax Foundation
-    # headline ("bottom 50% pays 3%") uses positive tax liability only.
-    # Report both so the frontend can show the gap.
-    net_income_tax = data["income_tax"]
-    gross_income_tax = np.clip(data["income_tax"], 0, None)
-
+    # ``income_tax_gross`` (= income_tax_before_refundable_credits) is the
+    # apples-to-apples match for IRS SOI's "Total Income Tax" distribution.
+    # ``income_tax_net`` is PE's standard measure, net of refundable credits.
     net_income_dist = shares.compute_distribution(
         agi=data["agi"],
-        tax=net_income_tax,
+        tax=data["income_tax_net"],
         weight=data["weight"],
     )
     gross_income_dist = shares.compute_distribution(
         agi=data["agi"],
-        tax=gross_income_tax,
+        tax=data["income_tax_gross"],
         weight=data["weight"],
     )
     combined_dist = shares.compute_distribution(
         agi=data["agi"],
-        tax=gross_income_tax + data["payroll_tax"],
+        tax=data["income_tax_gross"] + data["payroll_tax"],
         weight=data["weight"],
     )
     threshold = gross_income_dist["bottom_50_cutoff"]
     affected = shares.affected_below(
         agi=data["agi"],
-        tax=gross_income_tax,
+        tax=data["income_tax_gross"],
         weight=data["weight"],
         threshold=threshold,
     )

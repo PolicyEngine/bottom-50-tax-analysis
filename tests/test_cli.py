@@ -53,10 +53,12 @@ def test_build_payload_live_carries_tax_foundation_snapshot(monkeypatch):
     def fake_extract(year, *, filers_only=True):
         # 5 tax units, ascending AGI. The bottom two receive net refunds
         # (refundable EITC/CTC > positive liability) so net bottom-50 share
-        # comes out negative; gross bottom-50 share stays non-negative.
+        # comes out negative; gross income tax (before refundable credits)
+        # stays non-negative for everyone.
         return {
             "agi": np.array([10_000.0, 30_000, 60_000, 120_000, 500_000]),
-            "income_tax": np.array([-2_000.0, -100, 1_000, 10_000, 100_000]),
+            "income_tax_gross": np.array([100.0, 400, 4_000, 14_000, 120_000]),
+            "income_tax_net": np.array([-2_000.0, -100, 1_000, 10_000, 100_000]),
             "payroll_tax": np.array([750.0, 2_300, 4_600, 9_200, 18_000]),
             "weight": np.array([1.0, 1, 1, 1, 1]),
             "population_scope": "filers" if filers_only else "all_tax_units",
@@ -90,7 +92,8 @@ def test_build_payload_respects_include_non_filers(monkeypatch):
         seen["filers_only"] = filers_only
         return {
             "agi": np.array([1.0, 2, 3, 4, 5]),
-            "income_tax": np.array([0.0, 1, 2, 3, 4]),
+            "income_tax_gross": np.array([0.0, 1, 2, 3, 4]),
+            "income_tax_net": np.array([0.0, 1, 2, 3, 4]),
             "payroll_tax": np.array([0.1, 0.2, 0.3, 0.4, 0.5]),
             "weight": np.array([1.0, 1, 1, 1, 1]),
             "population_scope": "filers" if filers_only else "all_tax_units",

@@ -2,29 +2,29 @@
   "mode": "live",
   "version": "0.1.0",
   "snapshot_version": "live-policyengine-us",
-  "generated_at": "2026-05-21T15:27:04.530297+00:00",
+  "generated_at": "2026-05-21T18:22:31.242371+00:00",
   "year": 2026,
   "source": "PolicyEngine-US Enhanced CPS, calibrated 2026, restricted to filers (82% of all tax units)",
   "population_scope": "filers",
   "filer_share_of_all_tax_units": 0.8192930327510715,
   "income_tax": {
-    "bottom_50_share": 0.01596290055364174,
-    "top_50_share": 0.9840370994463582,
-    "top_25_share": 0.9331207320205628,
-    "top_10_share": 0.8459598341024845,
-    "top_5_share": 0.7823642661630843,
-    "top_1_share": 0.674166737468352,
+    "bottom_50_share": 0.016138027105078744,
+    "top_50_share": 0.9838619728949214,
+    "top_25_share": 0.932668270018814,
+    "top_10_share": 0.8455335637094283,
+    "top_5_share": 0.7819699597259688,
+    "top_1_share": 0.6738269579071746,
     "bottom_50_cutoff": 59933.1875,
     "top_25_cutoff": 120280.5390625,
     "top_10_cutoff": 209923.375,
     "top_5_cutoff": 314267.875,
     "top_1_cutoff": 619920.125,
     "quintile_shares": [
-      0.0005550529310581946,
-      0.006674742862305007,
-      0.02214900607750245,
-      0.059701992153026365,
-      0.9109192059761081
+      0.0005596467201063047,
+      0.006697049858144491,
+      0.02251019397125461,
+      0.05976715556499212,
+      0.9104659538855024
     ],
     "quintile_cutoffs": [
       19924.818359375,
@@ -33,7 +33,7 @@
       144206.0,
       1814895872.0
     ],
-    "total_tax": 5089306893015.99,
+    "total_tax": 5091873193521.65,
     "total_weight": 166034309.50318915
   },
   "income_tax_net": {
@@ -66,23 +66,23 @@
     "total_weight": 166034309.50318915
   },
   "income_plus_payroll": {
-    "bottom_50_share": 0.03862729334005722,
-    "top_50_share": 0.9613727066599428,
-    "top_25_share": 0.8794197938919845,
-    "top_10_share": 0.7606937699016403,
-    "top_5_share": 0.6857739047990458,
-    "top_1_share": 0.5728069924103895,
+    "bottom_50_share": 0.038764898680178114,
+    "top_50_share": 0.9612351013198219,
+    "top_25_share": 0.8790622157677781,
+    "top_10_share": 0.7603715803530396,
+    "top_5_share": 0.6854833809032276,
+    "top_1_share": 0.5725643230206587,
     "bottom_50_cutoff": 59933.1875,
     "top_25_cutoff": 120280.5390625,
     "top_10_cutoff": 209923.375,
     "top_5_cutoff": 314267.875,
     "top_1_cutoff": 619920.125,
     "quintile_shares": [
-      0.003887569123442724,
-      0.018065445935709162,
-      0.04046851511896253,
-      0.08936046420069212,
-      0.8482180056211934
+      0.003890018731448735,
+      0.01807937098562706,
+      0.04076435978334474,
+      0.08940267417547883,
+      0.8478635763241006
     ],
     "quintile_cutoffs": [
       19924.818359375,
@@ -91,15 +91,15 @@
       144206.0,
       1814895872.0
     ],
-    "total_tax": 6055036909770.207,
+    "total_tax": 6057603210275.867,
     "total_weight": 166034309.50318915
   },
   "zero_below_bottom_50": {
     "tax_year": 2026,
     "threshold": 59933.1875,
-    "revenue_cost_billions": 81.16756203879983,
+    "revenue_cost_billions": 82.10024983129834,
     "units_affected_millions": 82.98916930664491,
-    "average_tax_cut_dollars": 978.0500602299772
+    "average_tax_cut_dollars": 989.2887290862977
   },
   "reform_description": "Zero out federal income tax for all tax units with AGI under $59,933 in 2026.",
   "tax_foundation_2023": {

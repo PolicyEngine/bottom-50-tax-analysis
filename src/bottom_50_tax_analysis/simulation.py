@@ -59,7 +59,17 @@ def extract_tax_unit_data(
 
     sim = Microsimulation()
     agi = np.asarray(sim.calc("adjusted_gross_income", period=year), dtype=float)
-    income_tax = np.asarray(sim.calc("income_tax", period=year), dtype=float)
+    # ``income_tax`` is net of refundable credits — PE's standard measure,
+    # what you'd use for a budget score. Can be negative for refund recipients.
+    income_tax_net = np.asarray(sim.calc("income_tax", period=year), dtype=float)
+    # ``income_tax_before_refundable_credits`` is the apples-to-apples match
+    # for the IRS SOI "Total Income Tax" line that Tax Foundation
+    # distributes by AGI percentile: regular tax + AMT + NIIT + other
+    # surtaxes, after non-refundable credits, before refundable credits.
+    income_tax_gross = np.asarray(
+        sim.calc("income_tax_before_refundable_credits", period=year),
+        dtype=float,
+    )
     payroll_tax = np.asarray(sim.calc("employee_payroll_tax", period=year), dtype=float)
     weight = np.asarray(sim.calc("tax_unit_weight", period=year), dtype=float)
     is_filer = np.asarray(sim.calc("tax_unit_is_filer", period=year), dtype=bool)
@@ -71,7 +81,8 @@ def extract_tax_unit_data(
 
     return {
         "agi": agi[mask],
-        "income_tax": income_tax[mask],
+        "income_tax_gross": income_tax_gross[mask],
+        "income_tax_net": income_tax_net[mask],
         "payroll_tax": payroll_tax[mask],
         "weight": weight[mask],
         "population_scope": "filers" if filers_only else "all_tax_units",

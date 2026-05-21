@@ -84,12 +84,21 @@ arithmetic.
 
 - The Enhanced CPS is a calibrated survey, not an administrative tabulation.
   Cell-level estimates differ from IRS SOI publications, especially at the
-  top of the distribution.
+  top of the distribution: PolicyEngine targets top-income shares from
+  Piketty/Saez/Zucman, which place more income (and therefore tax) at the
+  top than the IRS Form 1040 tabulation. PE's 2026 top-1% mean AGI is
+  ~$7.2M; IRS SOI's 2023 top-1% mean AGI is ~$2.1M. The PE share for the
+  top 1% is correspondingly higher (~67% vs SOI's ~40%).
+- Methodologically apples-to-apples vs SOI requires (a) restricting to tax
+  filers via `tax_unit_is_filer`, (b) using
+  `income_tax_before_refundable_credits` rather than `income_tax`, and
+  (c) treating tax_unit_weight as the only calibrated weight. The CLI does
+  all three by default.
 - Behavioural responses are not modelled. The "zero out tax below the 50th
   percentile" revenue cost is a static estimate.
-- Payroll-tax incidence is debated. The repo reports both the employee-side
-  share (statutory incidence) and combined employee + employer (economic
-  incidence) where the Tax Foundation comparison is available.
+- Payroll-tax incidence is debated. The repo reports the employee-side
+  share (statutory incidence); economic incidence (incl. employer side)
+  would roughly double payroll's contribution to the bottom 50%'s burden.
 
 ## License
 
