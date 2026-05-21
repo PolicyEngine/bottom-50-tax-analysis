@@ -178,6 +178,32 @@ export default function Home() {
               distribution. For the live path, it comes from the calibrated
               Enhanced CPS; for the fallback path, from IRS SOI 2023.
             </li>
+            {data.population_scope && (
+              <li>
+                Population scope: <strong>{data.population_scope}</strong>
+                {data.filer_share_of_all_tax_units != null && (
+                  <>
+                    {" "}
+                    ({Math.round(data.filer_share_of_all_tax_units * 100)}% of
+                    the {Math.round(202.7)}M tax units in the Enhanced CPS).
+                  </>
+                )}{" "}
+                Non-filers are excluded to match the IRS SOI tabulation, which
+                is based on filed returns only. Pass{" "}
+                <code
+                  style={{
+                    backgroundColor: "var(--secondary)",
+                    padding: "0 4px",
+                    borderRadius: 4,
+                    fontSize: 12,
+                  }}
+                >
+                  --include-non-filers
+                </code>{" "}
+                to <code>bottom50-generate</code> to use the full population
+                instead.
+              </li>
+            )}
             <li>
               The &ldquo;zero income tax below threshold&rdquo; estimate is static — the
               static revenue cost equals the baseline income tax paid by all

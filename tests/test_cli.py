@@ -50,7 +50,7 @@ def test_build_payload_live_carries_tax_foundation_snapshot(monkeypatch):
 
     from bottom_50_tax_analysis import cli, simulation
 
-    def fake_extract(year):
+    def fake_extract(year, *, filers_only=True):
         # 5 tax units, ascending AGI. The bottom two receive net refunds
         # (refundable EITC/CTC > positive liability) so net bottom-50 share
         # comes out negative; gross bottom-50 share stays non-negative.
@@ -59,6 +59,8 @@ def test_build_payload_live_carries_tax_foundation_snapshot(monkeypatch):
             "income_tax": np.array([-2_000.0, -100, 1_000, 10_000, 100_000]),
             "payroll_tax": np.array([750.0, 2_300, 4_600, 9_200, 18_000]),
             "weight": np.array([1.0, 1, 1, 1, 1]),
+            "population_scope": "filers" if filers_only else "all_tax_units",
+            "filer_share": 0.82,
         }
 
     monkeypatch.setattr(simulation, "extract_tax_unit_data", fake_extract)
@@ -72,3 +74,30 @@ def test_build_payload_live_carries_tax_foundation_snapshot(monkeypatch):
     # net (refundable-credit-inclusive) values are negative.
     assert payload["income_tax"]["bottom_50_share"] >= 0
     assert payload["income_tax_net"]["bottom_50_share"] < 0
+    # Filer scope is on by default and surfaced in the payload.
+    assert payload["population_scope"] == "filers"
+    assert "filer_share_of_all_tax_units" in payload
+
+
+def test_build_payload_respects_include_non_filers(monkeypatch):
+    import numpy as np
+
+    from bottom_50_tax_analysis import cli, simulation
+
+    seen = {}
+
+    def fake_extract(year, *, filers_only=True):
+        seen["filers_only"] = filers_only
+        return {
+            "agi": np.array([1.0, 2, 3, 4, 5]),
+            "income_tax": np.array([0.0, 1, 2, 3, 4]),
+            "payroll_tax": np.array([0.1, 0.2, 0.3, 0.4, 0.5]),
+            "weight": np.array([1.0, 1, 1, 1, 1]),
+            "population_scope": "filers" if filers_only else "all_tax_units",
+            "filer_share": 0.82,
+        }
+
+    monkeypatch.setattr(simulation, "extract_tax_unit_data", fake_extract)
+    payload = cli.build_payload(live=True, year=2026, filers_only=False)
+    assert seen["filers_only"] is False
+    assert payload["population_scope"] == "all_tax_units"

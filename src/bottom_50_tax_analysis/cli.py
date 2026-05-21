@@ -41,12 +41,12 @@ def _build_fallback_payload(threshold: float, year: int) -> dict[str, Any]:
     }
 
 
-def _build_live_payload(year: int) -> dict[str, Any]:
+def _build_live_payload(year: int, *, filers_only: bool = True) -> dict[str, Any]:
     import numpy as np
 
     from . import simulation  # lazy import — pulls in policyengine_us
 
-    data = simulation.extract_tax_unit_data(year=year)
+    data = simulation.extract_tax_unit_data(year=year, filers_only=filers_only)
     # PolicyEngine's ``income_tax`` is net of refundable credits and can be
     # negative for tax units that receive refunds. The Tax Foundation
     # headline ("bottom 50% pays 3%") uses positive tax liability only.
@@ -85,7 +85,15 @@ def _build_live_payload(year: int) -> dict[str, Any]:
         "snapshot_version": "live-policyengine-us",
         "generated_at": datetime.now(UTC).isoformat(),
         "year": year,
-        "source": "PolicyEngine-US Enhanced CPS, calibrated 2026",
+        "source": (
+            "PolicyEngine-US Enhanced CPS, calibrated 2026, "
+            f"restricted to {data['population_scope']} "
+            f"({data['filer_share'] * 100:.0f}% of all tax units)"
+            if data["population_scope"] == "filers"
+            else "PolicyEngine-US Enhanced CPS, calibrated 2026, all tax units"
+        ),
+        "population_scope": data["population_scope"],
+        "filer_share_of_all_tax_units": data["filer_share"],
         "income_tax": gross_income_dist,
         "income_tax_net": net_income_dist,
         "income_plus_payroll": combined_dist,
@@ -108,10 +116,10 @@ def _build_live_payload(year: int) -> dict[str, Any]:
     }
 
 
-def build_payload(*, live: bool, year: int) -> dict[str, Any]:
+def build_payload(*, live: bool, year: int, filers_only: bool = True) -> dict[str, Any]:
     """Build the JSON payload — exposed for testing."""
     if live:
-        return _build_live_payload(year=year)
+        return _build_live_payload(year=year, filers_only=filers_only)
     return _build_fallback_payload(threshold=57_000, year=year)
 
 
@@ -139,9 +147,19 @@ def main(argv: list[str] | None = None) -> int:
         default=2026,
         help="Calendar year to simulate.",
     )
+    parser.add_argument(
+        "--include-non-filers",
+        action="store_true",
+        help=(
+            "Include tax units that don't file a return. By default the "
+            "population is restricted to filers to match IRS SOI."
+        ),
+    )
     args = parser.parse_args(argv)
 
-    payload = build_payload(live=args.live, year=args.year)
+    payload = build_payload(
+        live=args.live, year=args.year, filers_only=not args.include_non_filers
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2))
     print(f"Wrote {args.output} ({payload['mode']} mode)")

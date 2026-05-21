@@ -63,13 +63,18 @@ bun run dev
 For each tax unit in the PolicyEngine-US Enhanced CPS dataset (uprated to
 2026):
 
-1. Compute `adjusted_gross_income`, `income_tax`, and
+1. Filter to `tax_unit_is_filer == True` so the population matches IRS
+   SOI's tabulation, which is based on filed returns only. Non-filers
+   otherwise pull the median AGI down and depress the bottom-50 share.
+   Pass `--include-non-filers` to `bottom50-generate` to use the full
+   Enhanced CPS population.
+2. Compute `adjusted_gross_income`, `income_tax`, and
    `employee_payroll_tax + self_employment_payroll_tax`.
-2. Sort by AGI, compute weighted percentile ranks.
-3. Aggregate weighted tax totals into quintiles and top X% buckets.
-4. Re-run the simulation with a reform that zeros out federal income tax for
-   tax units below the 50th-percentile AGI cutoff, and report the difference
-   in `income_tax` revenue.
+3. Sort by AGI, compute weighted percentile ranks.
+4. Aggregate weighted tax totals into quintiles and top X% buckets.
+5. Report the static revenue cost of zeroing out federal income tax for
+   tax units below the 50th-percentile AGI cutoff, with no behavioural
+   response.
 
 Per the PolicyEngine microsimulation skill, all aggregates use
 `MicroSeries.sum()` / `.mean()` on the weighted series — no manual weight
