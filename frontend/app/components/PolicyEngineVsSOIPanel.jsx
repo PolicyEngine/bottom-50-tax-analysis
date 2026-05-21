@@ -66,25 +66,25 @@ export function PolicyEngineVsSOIPanel({ peDist, soi, peYear, soiYear }) {
         >
           Both series report gross federal individual income tax (regular tax
           + AMT + NIIT + cap-gains tax, after non-refundable credits, before
-          refundable credits) on filed returns. PE is uprated to{" "}
-          {peYear} from the plain Census CPS — its total revenue ($2.13T)
-          matches the IRS SOI {soiYear} tabulation ($2.14T) to within
-          1%. The bottom-50% AGI cutoff and top-1% cutoff are also close.
+          refundable credits) on filed returns. PE is uprated to {peYear}{" "}
+          from the plain Census CPS — its total revenue ($2.13T) matches
+          the IRS SOI {soiYear} tabulation ($2.14T) to within 1%.
         </p>
         <p
           className="text-sm mt-2"
           style={{ color: "var(--muted-foreground)" }}
         >
-          The gap that remains — PE understates the top-1% share —
-          reflects a known CPS limitation: surveys top-code very high
-          incomes, so the most concentrated tail isn&rsquo;t captured.
+          PE understates the top-1% share because the Census CPS top-codes
+          very high incomes (the highest AGI in this dataset is ~$3.3M).
           PolicyEngine&rsquo;s default <code>enhanced_cps_2024</code>{" "}
-          dataset adds synthetic high-income tax units to fix this for
-          distributional analysis, but the imputation overshoots
-          (total revenue ~2.4× SOI). For an apples-to-apples replication
-          of SOI&rsquo;s administrative tabulation, plain CPS is the
-          closer match. Pass <code>--dataset enhanced_cps_2024</code> to{" "}
-          <code>bottom50-generate</code> to see the alternative.
+          combines the CPS with the IRS Public Use File and reweights to
+          IRS SOI and CBO aggregate targets — but at present it{" "}
+          <strong>overshoots its own CBO target by ~1.86×</strong> in 2024,
+          2025, and 2026 (e.g. $5.1T vs the CBO 2026 target of $2.75T).
+          That&rsquo;s a calibration regression in the upstream dataset,
+          not an intentional measurement of a different concept. For an
+          SOI replication, plain CPS is the closer match here; pass{" "}
+          <code>--dataset enhanced_cps_2024</code> to see the alternative.
         </p>
       </div>
 

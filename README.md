@@ -83,27 +83,33 @@ arithmetic.
 ## Caveats
 
 - **Dataset choice matters a lot.** PE-US ships several datasets, and they
-  produce different totals when summed against IRS SOI's published
-  tabulations:
+  produce different `income_tax_positive` totals (the variable PE
+  calibrates against CBO's projected federal individual-income-tax
+  receipts):
 
-  | Dataset | Total income tax (2026) | Bottom-50 share | Top-1 share |
-  | --- | ---: | ---: | ---: |
-  | `cps_2024` (default here) | $2.13T | 4.9% | 23.4% |
-  | `enhanced_cps_2024` (PE standard) | $5.09T | 1.6% | 67.4% |
-  | IRS SOI 2023 (Tax Foundation) | $2.14T | 3.0% | 40.4% |
+  | Year | CBO target | `enhanced_cps_2024` | `cps_2024` |
+  | ---: | ---: | ---: | ---: |
+  | 2024 | $2,426B | $4,503B (1.86×) | $1,905B (0.79×) |
+  | 2025 | $2,656B | $4,719B (1.78×) | $1,992B (0.75×) |
+  | 2026 | $2,751B | $5,101B (1.85×) | $2,134B (0.78×) |
 
-  The plain `cps_2024` matches SOI's total revenue almost exactly because
-  its underlying records are Form-1040-equivalent. It understates the
-  top-1% share because CPS top-codes very high incomes (the highest AGI
-  in the file is ~$3M).
+  The `enhanced_cps_2024` is built by combining the plain Census CPS
+  with cloned records from the IRS Public Use File (PUF) and reweighting
+  to IRS SOI and CBO targets via L0-sparse optimisation
+  (`policyengine_us_data/datasets/cps/enhanced_cps.py`). The intent is to
+  hit the CBO target — but in the version pinned by this repo it
+  overshoots it by ~1.86× across every year tested. That is a
+  **calibration regression in the upstream dataset, not an intentional
+  measurement of a different concept**; I'll open an issue against
+  `PolicyEngine/policyengine-us-data` to investigate.
 
-  The `enhanced_cps_2024` adds synthetic high-net-worth tax units (the
-  highest AGI in the file is ~$30B). This is intentional in PE's design
-  for distributional analysis, but its total revenue is roughly 2.4× SOI,
-  so the percentile shares aren't an apples-to-apples match for an SOI
-  replication. PE's website distributional charts use the Enhanced CPS;
-  the bottom-50% / top-1% tax-share comparisons here use plain CPS by
-  choice. Pass `--dataset enhanced_cps_2024` to switch.
+  Until the Enhanced CPS calibration is fixed, the default for this repo
+  is `cps_2024` because (a) its total is ~$2.13T, which matches the IRS
+  SOI 2023 figure of $2.14T essentially exactly, and (b) shares at the
+  bottom of the distribution come out close to SOI. The CPS top-codes
+  very high incomes (max AGI in the file is ~$3.3M), so the top-1% share
+  is undershot — that's a known CPS limitation. Pass
+  `--dataset enhanced_cps_2024` to use the PE standard anyway.
 - **Tax-definition alignment.** The repo uses
   `income_tax_before_refundable_credits` for the SOI comparison: regular
   tax + AMT + NIIT + cap-gains tax, after non-refundable credits, before
