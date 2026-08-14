@@ -97,19 +97,34 @@ arithmetic.
   with cloned records from the IRS Public Use File (PUF) and reweighting
   to IRS SOI and CBO targets via L0-sparse optimisation
   (`policyengine_us_data/datasets/cps/enhanced_cps.py`). The intent is to
-  hit the CBO target — but in the version pinned by this repo it
-  overshoots it by ~1.86× across every year tested. That is a
-  **calibration regression in the upstream dataset, not an intentional
-  measurement of a different concept**; I'll open an issue against
-  `PolicyEngine/policyengine-us-data` to investigate.
+  hit the CBO target — but the final published build overshoots it by
+  ~1.86× across every year tested. That was a **calibration regression
+  introduced in the May 19–20 2026 (1.115.x) builds**, tracked in
+  [policyengine-us-data#1107](https://github.com/PolicyEngine/policyengine-us-data/issues/1107):
+  the recalibration let a handful of synthetic top-tail records carry
+  extreme weight (one record with AGI ≈ $1.8B contributed ~$409B of
+  national AGI on its own), which also inflated top-concentrated
+  deductions ~9×.
 
-  Until the Enhanced CPS calibration is fixed, the default for this repo
-  is `cps_2024` because (a) its total is ~$2.13T, which matches the IRS
-  SOI 2023 figure of $2.14T essentially exactly, and (b) shares at the
-  bottom of the distribution come out close to SOI. The CPS top-codes
-  very high incomes (max AGI in the file is ~$3.3M), so the top-1% share
-  is undershot — that's a known CPS limitation. Pass
-  `--dataset enhanced_cps_2024` to use the PE standard anyway.
+  That regression was never fixed in `policyengine-us-data` — the repo
+  was **archived in July 2026** with the broken `enhanced_cps_2024.h5`
+  frozen as the final artifact. The successor certified US dataset lives
+  in [PolicyEngine/microcosm](https://github.com/PolicyEngine/microcosm)
+  (formerly populace), which restored pinned US fiscal calibration
+  targets (SOI income tax / AGI, plus a macro-realism gate) in
+  [microcosm#44](https://github.com/PolicyEngine/microcosm/pull/44)
+  (merged June 2026).
+
+  The default for this repo therefore remains `cps_2024` — permanently,
+  as far as the frozen artifacts go — because (a) its total is ~$2.13T,
+  which matches the IRS SOI 2023 figure of $2.14T essentially exactly,
+  and (b) shares at the bottom of the distribution come out close to
+  SOI. The CPS top-codes very high incomes (max AGI in the file is
+  ~$3.3M), so the top-1% share is undershot — that's a known CPS
+  limitation. Pass `--dataset enhanced_cps_2024` to use the frozen PE
+  artifact anyway (not recommended). Migrating this repo to the
+  microcosm-certified dataset via the `policyengine.py` interface is the
+  eventual fix for the top-tail undershoot.
 - **Tax-definition alignment.** The repo uses
   `income_tax_before_refundable_credits` for the SOI comparison: regular
   tax + AMT + NIIT + cap-gains tax, after non-refundable credits, before

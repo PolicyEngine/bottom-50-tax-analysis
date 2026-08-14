@@ -76,15 +76,25 @@ export function PolicyEngineVsSOIPanel({ peDist, soi, peYear, soiYear }) {
         >
           PE understates the top-1% share because the Census CPS top-codes
           very high incomes (the highest AGI in this dataset is ~$3.3M).
-          PolicyEngine&rsquo;s default <code>enhanced_cps_2024</code>{" "}
-          combines the CPS with the IRS Public Use File and reweights to
-          IRS SOI and CBO aggregate targets — but at present it{" "}
+          The alternative <code>enhanced_cps_2024</code> combines the CPS
+          with the IRS Public Use File and reweights to IRS SOI and CBO
+          aggregate targets — but its final published build{" "}
           <strong>overshoots its own CBO target by ~1.86×</strong> in 2024,
-          2025, and 2026 (e.g. $5.1T vs the CBO 2026 target of $2.75T).
-          That&rsquo;s a calibration regression in the upstream dataset,
-          not an intentional measurement of a different concept. For an
-          SOI replication, plain CPS is the closer match here; pass{" "}
-          <code>--dataset enhanced_cps_2024</code> to see the alternative.
+          2025, and 2026 (e.g. $5.1T vs the CBO 2026 target of $2.75T), a
+          calibration regression introduced in the May 2026 builds and
+          frozen when the policyengine-us-data repo was archived in July
+          2026 (see{" "}
+          <a
+            href="https://github.com/PolicyEngine/policyengine-us-data/issues/1107"
+            style={{ color: "var(--primary)" }}
+          >
+            issue #1107
+          </a>
+          ). Its successor dataset lives in PolicyEngine/microcosm, which
+          restored pinned fiscal targets. For an SOI replication, plain
+          CPS is the closer match here; pass{" "}
+          <code>--dataset enhanced_cps_2024</code> to see the frozen
+          alternative.
         </p>
       </div>
 
