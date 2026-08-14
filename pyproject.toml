@@ -27,7 +27,19 @@ dependencies = [
 
 [project.optional-dependencies]
 sim = [
-    "policyengine-us>=1.0,<2.0",
+    # Certified-release loader: resolves latest.json on the
+    # policyengine/populace-us Hugging Face dataset repo, reads the release
+    # manifest at the immutable release tag, SHA-256-verifies the artifact,
+    # and refuses engine versions outside the release certification.
+    # Not yet on PyPI, so installed from the microcosm monorepo.
+    "microcosm-data[us] @ git+https://github.com/PolicyEngine/microcosm.git#subdirectory=packages/microcosm-data",
+    # Exact pins: the current certified release
+    # (populace-us-2024-buildp-sparse-rmloss100-cae8640-20260728T011454Z)
+    # certifies policyengine-us==1.764.6 and policyengine-core==3.26.11,
+    # and microcosm.data.load() enforces that at load time. Bump these
+    # together when latest.json moves to a release with new certifications.
+    "policyengine-us==1.764.6",
+    "policyengine-core==3.26.11",
 ]
 dev = [
     "pytest>=8.0",
@@ -45,6 +57,11 @@ Repository = "https://github.com/PolicyEngine/bottom-50-tax-analysis"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bottom_50_tax_analysis"]
+
+[tool.hatch.metadata]
+# The sim extra installs microcosm-data from the monorepo (not yet on PyPI),
+# which is a PEP 508 direct reference.
+allow-direct-references = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

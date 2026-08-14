@@ -33,7 +33,7 @@ function formatCurrency(value, opts = {}) {
  * richer schedule, but we keep the same UX so the page behaves
  * identically.
  */
-export function ThresholdSlider({ anchor }) {
+export function ThresholdSlider({ anchor, totalUnitsMillions }) {
   const min = 10_000;
   const max = Math.max(120_000, Math.round(anchor.threshold * 2));
   const step = 1_000;
@@ -122,7 +122,9 @@ export function ThresholdSlider({ anchor }) {
             {unitsAffectedMillions.toFixed(1)}M
           </div>
           <div className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>
-            of about 170M total returns
+            {totalUnitsMillions
+              ? `of ${totalUnitsMillions.toFixed(0)}M filing tax units`
+              : "filing tax units"}
           </div>
         </div>
       </div>

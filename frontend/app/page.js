@@ -110,7 +110,14 @@ export default function Home() {
               modelled.
             </p>
           </div>
-          <ThresholdSlider anchor={data.zero_below_bottom_50} />
+          <ThresholdSlider
+            anchor={data.zero_below_bottom_50}
+            totalUnitsMillions={
+              data.income_tax?.total_weight
+                ? data.income_tax.total_weight / 1e6
+                : null
+            }
+          />
         </section>
 
         <section className="mb-12">
@@ -140,6 +147,7 @@ export default function Home() {
               soi={data.tax_foundation_2023}
               peYear={data.year}
               soiYear={data.tax_foundation_2023.tax_year}
+              dataset={data.dataset}
             />
           </section>
         )}
@@ -168,6 +176,31 @@ export default function Home() {
                 : "Tax Foundation / IRS SOI fallback snapshot — install with [sim] extras and pass --live to regenerate"}
               ).
             </li>
+            {data.dataset && (
+              <li>
+                Dataset: <strong>{data.dataset}</strong>
+                {data.dataset_release && (
+                  <>
+                    {" "}
+                    — certified microcosm release{" "}
+                    <code
+                      style={{
+                        backgroundColor: "var(--secondary)",
+                        padding: "0 4px",
+                        borderRadius: 4,
+                        fontSize: 11,
+                        overflowWrap: "anywhere",
+                      }}
+                    >
+                      {data.dataset_release}
+                    </code>
+                    , resolved from <code>latest.json</code> and SHA-verified
+                    by <code>microcosm-data</code>
+                  </>
+                )}
+                .
+              </li>
+            )}
             <li>
               Income-tax shares reflect federal individual income tax (the
               headline figure cited by commentators). Combined shares add
@@ -175,19 +208,28 @@ export default function Home() {
             </li>
             <li>
               The bottom-50 AGI cutoff is taken directly from the
-              distribution. For the live path, it comes from the calibrated
-              Enhanced CPS; for the fallback path, from IRS SOI 2023.
+              distribution. For the live path, it comes from the
+              microsimulation dataset named above; for the fallback path,
+              from IRS SOI 2023.
             </li>
             {data.population_scope && (
               <li>
                 Population scope: <strong>{data.population_scope}</strong>
-                {data.filer_share_of_all_tax_units != null && (
-                  <>
-                    {" "}
-                    ({Math.round(data.filer_share_of_all_tax_units * 100)}% of
-                    the {Math.round(202.7)}M tax units in the Enhanced CPS).
-                  </>
-                )}{" "}
+                {data.filer_share_of_all_tax_units != null &&
+                  data.income_tax?.total_weight != null && (
+                    <>
+                      {" "}
+                      ({Math.round(
+                        data.filer_share_of_all_tax_units * 100,
+                      )}% of the{" "}
+                      {(
+                        data.income_tax.total_weight /
+                        data.filer_share_of_all_tax_units /
+                        1e6
+                      ).toFixed(0)}
+                      M tax units in the dataset).
+                    </>
+                  )}{" "}
                 Non-filers are excluded to match the IRS SOI tabulation, which
                 is based on filed returns only. Pass{" "}
                 <code

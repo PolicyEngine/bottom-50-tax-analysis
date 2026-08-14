@@ -1,9 +1,9 @@
 """PolicyEngine-US microsimulation wrapper.
 
-This module is imported lazily — ``policyengine-us`` is heavy and is an
+This module is imported lazily — the simulation stack is heavy and is an
 **optional** dependency (``pip install bottom-50-tax-analysis[sim]``).
 Calling :func:`extract_tax_unit_data` raises a helpful ImportError if the
-package is missing.
+packages are missing.
 
 The wrapper extracts AGI, federal income tax, and (employee-side) payroll
 tax for every tax unit, with the household weight mapped to the tax_unit
@@ -21,7 +21,7 @@ from __future__ import annotations
 import numpy as np
 
 
-def _require_policyengine_us() -> None:
+def _require_sim_stack() -> None:
     try:
         import policyengine_us  # noqa: F401
     except ImportError as exc:  # pragma: no cover — exercised only without [sim]
@@ -33,20 +33,53 @@ def _require_policyengine_us() -> None:
         ) from exc
 
 
-DATASETS = {
+#: The certified microcosm release (default). ``microcosm.data.load`` resolves
+#: ``latest.json`` on the ``policyengine/populace-us`` Hugging Face dataset
+#: repo, reads the release manifest at the immutable release tag, verifies the
+#: artifact's SHA-256, and refuses engine versions outside the release's
+#: certification — so which release you got is recorded, not guessed.
+MICROCOSM_DATASET = "microcosm_us_2024"
+
+#: Frozen policyengine-us-data artifacts (that repo was archived in July
+#: 2026; these files no longer change). Kept as escape hatches for
+#: comparison runs only — see the README dataset caveat.
+LEGACY_DATASETS = {
     "cps_2024": "hf://policyengine/policyengine-us-data/cps_2024.h5",
     "enhanced_cps_2024": "hf://policyengine/policyengine-us-data/enhanced_cps_2024.h5",
     "pooled_3_year_cps_2023": "hf://policyengine/policyengine-us-data/pooled_3_year_cps_2023.h5",
 }
 
-# Default dataset for SOI comparison: plain Census CPS uprated by PolicyEngine.
-# It produces total federal income tax within 1% of IRS SOI's published
-# tabulation, because its underlying data is Form-1040-equivalent.
-# The Enhanced CPS adds synthetic high-net-worth tax units calibrated to
-# Saez/Zucman top-income shares — useful for distributional analysis at the
-# top, but produces total tax ~2.4× SOI which is not what we want for an
-# IRS replication.
-DEFAULT_DATASET = "cps_2024"
+DATASETS = (MICROCOSM_DATASET, *LEGACY_DATASETS)
+
+DEFAULT_DATASET = MICROCOSM_DATASET
+
+
+def _certified_release_id() -> str:
+    """The release id ``latest.json`` currently points at, for provenance.
+
+    ``microcosm.data.load`` re-resolves the pointer itself immediately after
+    this call; the id is informational (it names the release in
+    ``results.json``), while the loader's own resolution is what gets
+    SHA-verified and compatibility-checked.
+    """
+    from microcosm.data import resolve
+    from microcosm.data.release import latest_release
+
+    return latest_release(resolve("us", 2024).hf_repo).release_id
+
+
+def _build_microsimulation(dataset: str):
+    """Return ``(Microsimulation, release_id-or-None)`` for ``dataset``."""
+    from policyengine_us import Microsimulation  # type: ignore[import-not-found]
+
+    if dataset == MICROCOSM_DATASET:
+        from microcosm.data import load
+
+        release_id = _certified_release_id()
+        return Microsimulation(dataset=load("us", 2024)), release_id
+    if dataset in LEGACY_DATASETS:
+        return Microsimulation(dataset=LEGACY_DATASETS[dataset]), None
+    raise ValueError(f"Unknown dataset {dataset!r}. Choices: {sorted(DATASETS)}.")
 
 
 def extract_tax_unit_data(
@@ -64,28 +97,25 @@ def extract_tax_unit_data(
     filers_only : bool, default True
         If True, drop tax units where ``tax_unit_is_filer`` is False so the
         population matches IRS SOI (which only tabulates filed returns).
-    dataset : str, default "cps_2024"
-        Which PolicyEngine-US dataset to use. ``cps_2024`` is the plain
-        Census CPS uprated by PE; it matches IRS SOI totals to within 1%
-        but understates the very top of the income distribution because
-        CPS is top-coded. ``enhanced_cps_2024`` (PE's standard) adds
-        synthetic high-net-worth tax units calibrated to Saez/Zucman
-        top-income shares — total federal income tax comes out ~2.4× IRS
-        SOI, which is intentional in PE's design but is not an apples-
-        to-apples match for SOI tabulations.
+    dataset : str, default "microcosm_us_2024"
+        Which dataset to use. The default loads the current certified
+        microcosm release (CPS ASEC structure with IRS PUF tax detail,
+        calibrated to IRS SOI income-tax targets), so both the totals and
+        the top of the distribution are usable. ``cps_2024`` and
+        ``enhanced_cps_2024`` load the frozen policyengine-us-data
+        artifacts for comparison: plain CPS matches SOI totals but
+        top-codes high incomes; the final enhanced build overshoots its
+        revenue target ~1.86× (see the README dataset caveat).
 
     Returns
     -------
     dict
         AGI, federal income tax, employee payroll tax, weight, and
-        population-scope metadata as numpy arrays.
+        population-scope metadata as numpy arrays, plus the certified
+        release id under ``dataset_release`` (None for legacy datasets).
     """
-    _require_policyengine_us()
-    from policyengine_us import Microsimulation  # type: ignore[import-not-found]
-
-    if dataset not in DATASETS:
-        raise ValueError(f"Unknown dataset {dataset!r}. Choices: {sorted(DATASETS)}.")
-    sim = Microsimulation(dataset=DATASETS[dataset])
+    _require_sim_stack()
+    sim, release_id = _build_microsimulation(dataset)
     agi = np.asarray(sim.calc("adjusted_gross_income", period=year), dtype=float)
     # ``income_tax`` is net of refundable credits — PE's standard measure,
     # what you'd use for a budget score. Can be negative for refund recipients.
@@ -116,4 +146,5 @@ def extract_tax_unit_data(
         "population_scope": "filers" if filers_only else "all_tax_units",
         "filer_share": float(weight[is_filer].sum() / weight.sum()),
         "dataset": dataset,
+        "dataset_release": release_id,
     }

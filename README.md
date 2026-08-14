@@ -16,8 +16,8 @@ The headline is accurate as far as it goes, but it is also incomplete:
   which fall most heavily on low- and middle-income workers.
 - The "bottom 50%" is a moving target — the AGI cutoff was about
   \$50,339 for tax year 2022 and roughly \$54,000 for 2023; this repo
-  projects the cutoff forward to 2026 with PolicyEngine's calibrated Enhanced
-  CPS.
+  projects the cutoff forward to 2026 with PolicyEngine-US on the
+  certified microcosm dataset.
 - Zeroing-out federal income tax for the bottom 50% is sometimes floated as
   a policy idea. This repo estimates the revenue cost, the number of tax
   units affected, and the per-household tax cut.
@@ -46,9 +46,11 @@ uv pip install ".[sim]"             # add policyengine-us
 uv run bottom50-generate --live     # emit data/results.json (live microsim)
 ```
 
-`--live` runs the PolicyEngine-US Enhanced CPS microsimulation. Without it,
-the CLI uses bundled Tax Foundation / IRS SOI 2023 fallback numbers so the
-frontend can build in CI without microdata access.
+`--live` runs the PolicyEngine-US microsimulation on the certified
+microcosm dataset (the first run downloads and SHA-verifies the release
+artifact from the public `policyengine/populace-us` Hugging Face dataset
+repo). Without it, the CLI uses bundled Tax Foundation / IRS SOI 2023
+fallback numbers so the frontend can build in CI without microdata access.
 
 ### Run the frontend
 
@@ -60,14 +62,15 @@ bun run dev
 
 ## Methodology
 
-For each tax unit in the PolicyEngine-US Enhanced CPS dataset (uprated to
-2026):
+For each tax unit in the certified microcosm US dataset (resolved,
+SHA-verified, and engine-version-checked by `microcosm-data`; the release
+id is recorded in `results.json`), simulated for 2026:
 
 1. Filter to `tax_unit_is_filer == True` so the population matches IRS
    SOI's tabulation, which is based on filed returns only. Non-filers
    otherwise pull the median AGI down and depress the bottom-50 share.
    Pass `--include-non-filers` to `bottom50-generate` to use the full
-   Enhanced CPS population.
+   population.
 2. Compute `adjusted_gross_income`, `income_tax`, and
    `employee_payroll_tax + self_employment_payroll_tax`.
 3. Sort by AGI, compute weighted percentile ranks.
@@ -76,22 +79,28 @@ For each tax unit in the PolicyEngine-US Enhanced CPS dataset (uprated to
    tax units below the 50th-percentile AGI cutoff, with no behavioural
    response.
 
-Per the PolicyEngine microsimulation skill, all aggregates use
-`MicroSeries.sum()` / `.mean()` on the weighted series — no manual weight
-arithmetic.
+Percentile math lives in `shares.py` as pure numpy on `(agi, tax, weight)`
+arrays — weighted cumulative sums with interpolation at percentile
+boundaries — so it unit-tests against hand-computed populations
+(`tests/test_shares.py`) independently of the simulation stack.
 
 ## Caveats
 
-- **Dataset choice matters a lot.** PE-US ships several datasets, and they
-  produce different `income_tax_positive` totals (the variable PE
-  calibrates against CBO's projected federal individual-income-tax
-  receipts):
+- **Dataset choice matters a lot.** Gross federal income tax on filed
+  returns (`income_tax_before_refundable_credits`, the SOI-comparable
+  line), measured from this repo's own pipeline under the pinned
+  `policyengine-us` 1.764.6:
 
-  | Year | CBO target | `enhanced_cps_2024` | `cps_2024` |
-  | ---: | ---: | ---: | ---: |
-  | 2024 | $2,426B | $4,503B (1.86×) | $1,905B (0.79×) |
-  | 2025 | $2,656B | $4,719B (1.78×) | $1,992B (0.75×) |
-  | 2026 | $2,751B | $5,101B (1.85×) | $2,134B (0.78×) |
+  | Year | `microcosm_us_2024` (default) | `cps_2024` (frozen) | Reference points |
+  | ---: | ---: | ---: | :--- |
+  | 2024 | $2,363B | $1,905B | IRS SOI liability target: $2,359B · CBO receipts: $2,426B |
+  | 2025 | $2,514B | $2,099B | CBO receipts: $2,656B |
+  | 2026 | $2,716B | $2,246B | CBO receipts: $2,751B |
+
+  (The third frozen artifact, `enhanced_cps_2024`, measured $4,503B /
+  $4,719B / $5,101B across 2024–26 when this repo was built in May 2026
+  — the ~1.86× CBO overshoot described below — and is left out of the
+  table.)
 
   The `enhanced_cps_2024` is built by combining the plain Census CPS
   with cloned records from the IRS Public Use File (PUF) and reweighting
@@ -115,24 +124,51 @@ arithmetic.
   [microcosm#44](https://github.com/PolicyEngine/microcosm/pull/44)
   (merged June 2026).
 
-  The default for this repo therefore remains `cps_2024` — permanently,
-  as far as the frozen artifacts go — because (a) its total is ~$2.13T,
-  which matches the IRS SOI 2023 figure of $2.14T essentially exactly,
-  and (b) shares at the bottom of the distribution come out close to
-  SOI. The CPS top-codes very high incomes (max AGI in the file is
-  ~$3.3M), so the top-1% share is undershot — that's a known CPS
-  limitation. Pass `--dataset enhanced_cps_2024` to use the frozen PE
-  artifact anyway (not recommended). Migrating this repo to the
-  microcosm-certified dataset via the `policyengine.py` interface is the
-  eventual fix for the top-tail undershoot.
+  **This repo now defaults to the certified microcosm release**
+  (`microcosm_us_2024`). `microcosm.data.load` resolves `latest.json` on
+  the `policyengine/populace-us` Hugging Face repo, reads the release
+  manifest at its immutable tag, SHA-256-verifies the artifact, and
+  refuses engine versions outside the release's certification — so
+  `results.json` records exactly which release produced it (and reruns
+  may resolve a newer release than the checked-in results; bump the
+  engine pins in `pyproject.toml` when the certification moves).
+
+  The release's hard calibration anchor is the IRS SOI **liability**
+  total — CBO receipts were de-anchored to a macro-only reference in
+  [microcosm#79](https://github.com/PolicyEngine/microcosm/pull/79).
+  The checked-in release's diagnostics land **+0.12%** from the 2024
+  target, and this repo's own 2024 run reproduces it ($2,363B vs the
+  $2,359B target). That target is TY2022-vintage valued at 2024
+  ([microcosm#116](https://github.com/PolicyEngine/microcosm/issues/116)
+  tracks aging it), so read projected-year totals against CBO receipts
+  only loosely.
+
+  Distributionally, the release calibrates national totals (its
+  national SOI surface has AGI-bracket splits only for taxable
+  interest), so the share of tax by AGI percentile is an emergent
+  outcome, not a target. At 2026 it lands close to SOI 2023 through
+  most of the distribution — bottom-50 share 2.4% vs 3.0%, top-25
+  within ~1pp, top-10 within ~1.4pp, top-5 within ~3.5pp — while the
+  top-1% share (28.4%) still reads well below SOI's 40.4%. Keep that
+  gap in mind for statements about the very top (the years and law also
+  differ, 2026 vs 2023). The top tail is at least populated now: max
+  AGI in the certified release is ~$14.9M at 2026, versus the ~$3.3M
+  top-code that made `cps_2024`'s top-1% share (22.5%) unusable for
+  top-end statements.
+
+  The frozen `policyengine-us-data` artifacts stay available as explicit
+  comparison escape hatches: `--dataset cps_2024` (top-coded tail) and
+  `--dataset enhanced_cps_2024` (the broken final build — not
+  recommended).
 - **Tax-definition alignment.** The repo uses
   `income_tax_before_refundable_credits` for the SOI comparison: regular
   tax + AMT + NIIT + cap-gains tax, after non-refundable credits, before
   refundable. This is the line that maps to Tax Foundation's "Total
   Income Tax".
-- **Population.** Default filters to `tax_unit_is_filer == True` (~81%
-  of Enhanced CPS / ~89% of plain CPS tax units) so the comparison
-  population matches IRS SOI, which tabulates filed returns only.
+- **Population.** Default filters to `tax_unit_is_filer == True` (~97%
+  of microcosm tax units; ~81% of Enhanced CPS / ~89% of plain CPS) so
+  the comparison population matches IRS SOI, which tabulates filed
+  returns only.
 - Behavioural responses are not modelled. The "zero out tax below the
   50th percentile" revenue cost is a static estimate.
 - Payroll-tax incidence is debated. The repo reports the employee-side
@@ -142,4 +178,5 @@ arithmetic.
 ## License
 
 AGPL-3.0-or-later. Data inputs are governed by the licences of the underlying
-sources (IRS SOI, Census CPS, PolicyEngine Enhanced CPS).
+sources (IRS SOI, Census CPS, and the microcosm-published population
+dataset).
