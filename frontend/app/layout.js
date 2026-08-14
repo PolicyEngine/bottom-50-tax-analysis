@@ -10,7 +10,7 @@ const inter = Inter({
 export const metadata = {
   title: "Bottom 50% federal tax burden | PolicyEngine",
   description:
-    "Interactive analysis of how much federal income (and payroll) tax the bottom 50% of US earners pay, using PolicyEngine's microsimulation of the Enhanced CPS.",
+    "Interactive analysis of how much federal income (and payroll) tax the bottom 50% of US earners pay, using PolicyEngine's microsimulation on the certified microcosm dataset.",
 };
 
 export default function RootLayout({ children }) {

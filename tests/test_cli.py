@@ -82,6 +82,45 @@ def test_build_payload_live_carries_tax_foundation_snapshot(monkeypatch):
     assert "filer_share_of_all_tax_units" in payload
 
 
+def test_default_dataset_is_certified_microcosm_release():
+    from bottom_50_tax_analysis import simulation
+
+    assert simulation.DEFAULT_DATASET == "microcosm_us_2024"
+    # The frozen policyengine-us-data artifacts stay available as explicit
+    # comparison escape hatches.
+    assert set(simulation.LEGACY_DATASETS) == {
+        "cps_2024",
+        "enhanced_cps_2024",
+        "pooled_3_year_cps_2023",
+    }
+
+
+def test_build_payload_live_records_dataset_release(monkeypatch):
+    # The certified-release id resolved by microcosm-data must flow into the
+    # payload so results.json records exactly which release produced it.
+    import numpy as np
+
+    from bottom_50_tax_analysis import cli, simulation
+
+    def fake_extract(year, *, filers_only=True, dataset=simulation.DEFAULT_DATASET):
+        return {
+            "agi": np.array([10_000.0, 500_000.0]),
+            "income_tax_gross": np.array([100.0, 120_000.0]),
+            "income_tax_net": np.array([-2_000.0, 100_000.0]),
+            "payroll_tax": np.array([750.0, 18_000.0]),
+            "weight": np.array([1.0, 1.0]),
+            "population_scope": "filers",
+            "filer_share": 0.82,
+            "dataset": dataset,
+            "dataset_release": "populace-us-2024-example-release",
+        }
+
+    monkeypatch.setattr(simulation, "extract_tax_unit_data", fake_extract)
+    payload = cli.build_payload(live=True, year=2026)
+    assert payload["dataset"] == "microcosm_us_2024"
+    assert payload["dataset_release"] == "populace-us-2024-example-release"
+
+
 def test_build_payload_respects_include_non_filers(monkeypatch):
     import numpy as np
 

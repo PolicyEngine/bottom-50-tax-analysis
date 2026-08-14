@@ -42,8 +42,17 @@ function buildChartData(pe, soi) {
   }));
 }
 
-export function PolicyEngineVsSOIPanel({ peDist, soi, peYear, soiYear }) {
+function formatTrillions(dollars) {
+  if (dollars == null) return "—";
+  return `$${(dollars / 1e12).toFixed(2)}T`;
+}
+
+export function PolicyEngineVsSOIPanel({ peDist, soi, peYear, soiYear, dataset }) {
   const data = buildChartData(peDist, soi.income_tax);
+  const soiTotal =
+    soi.income_tax.total_tax_billions != null
+      ? soi.income_tax.total_tax_billions * 1e9
+      : null;
 
   return (
     <div
@@ -66,35 +75,48 @@ export function PolicyEngineVsSOIPanel({ peDist, soi, peYear, soiYear }) {
         >
           Both series report gross federal individual income tax (regular tax
           + AMT + NIIT + cap-gains tax, after non-refundable credits, before
-          refundable credits) on filed returns. PE is uprated to {peYear}{" "}
-          from the plain Census CPS — its total revenue ($2.13T) matches
-          the IRS SOI {soiYear} tabulation ($2.14T) to within 1%.
+          refundable credits) on filed returns. PE simulates {peYear} on the
+          certified microcosm dataset
+          {dataset ? (
+            <>
+              {" "}
+              (<code>{dataset}</code>)
+            </>
+          ) : null}
+          ; its total here is {formatTrillions(peDist.total_tax)}, against{" "}
+          {formatTrillions(soiTotal)} in the IRS SOI {soiYear} tabulation —
+          different years, so the totals are not a same-year benchmark.
         </p>
         <p
           className="text-sm mt-2"
           style={{ color: "var(--muted-foreground)" }}
         >
-          PE understates the top-1% share because the Census CPS top-codes
-          very high incomes (the highest AGI in this dataset is ~$3.3M).
-          The alternative <code>enhanced_cps_2024</code> combines the CPS
-          with the IRS Public Use File and reweights to IRS SOI and CBO
-          aggregate targets — but its final published build{" "}
-          <strong>overshoots its own CBO target by ~1.86×</strong> in 2024,
-          2025, and 2026 (e.g. $5.1T vs the CBO 2026 target of $2.75T), a
-          calibration regression introduced in the May 2026 builds and
-          frozen when the policyengine-us-data repo was archived in July
-          2026 (see{" "}
+          The certified release calibrates national IRS SOI totals — its 2024
+          federal income-tax liability lands +0.1% from the SOI target — and
+          carries IRS PUF tax detail, so the top tail is populated rather
+          than top-coded the way the plain-CPS dataset this repo previously
+          defaulted to was. The <em>distribution</em> of tax across AGI
+          percentiles is not itself a calibration target, though, and PE&rsquo;s
+          top-1% share comes out below the SOI tabulation. Historical note:
+          the previous PE-standard <code>enhanced_cps_2024</code> overshot
+          its CBO revenue target ~1.86× (a May 2026 calibration regression,{" "}
           <a
             href="https://github.com/PolicyEngine/policyengine-us-data/issues/1107"
             style={{ color: "var(--primary)" }}
           >
-            issue #1107
+            policyengine-us-data#1107
           </a>
-          ). Its successor dataset lives in PolicyEngine/microcosm, which
-          restored pinned fiscal targets. For an SOI replication, plain
-          CPS is the closer match here; pass{" "}
-          <code>--dataset enhanced_cps_2024</code> to see the frozen
-          alternative.
+          , frozen when that repo was archived in July 2026); the certified
+          microcosm releases fixed the income-tax calibration (
+          <a
+            href="https://github.com/PolicyEngine/microcosm/issues/67"
+            style={{ color: "var(--primary)" }}
+          >
+            microcosm#67
+          </a>
+          ). Pass <code>--dataset cps_2024</code> or{" "}
+          <code>--dataset enhanced_cps_2024</code> to reproduce the frozen
+          artifacts.
         </p>
       </div>
 

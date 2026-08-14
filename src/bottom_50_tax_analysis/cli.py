@@ -94,6 +94,7 @@ def _build_live_payload(
             f"({data['filer_share'] * 100:.0f}% of all tax units)"
         ),
         "dataset": data["dataset"],
+        "dataset_release": data.get("dataset_release"),
         "population_scope": data["population_scope"],
         "filer_share_of_all_tax_units": data["filer_share"],
         "income_tax": gross_income_dist,
@@ -168,9 +169,11 @@ def main(argv: list[str] | None = None) -> int:
         type=str,
         default=None,
         help=(
-            "PolicyEngine-US dataset to use for --live. Default: cps_2024 "
-            "(matches IRS SOI totals). Use enhanced_cps_2024 for PE's "
-            "standard distributional analysis with synthetic top-end."
+            "Dataset to use for --live. Default: microcosm_us_2024, the "
+            "current certified microcosm release (resolved, SHA-verified, "
+            "and version-checked by microcosm-data). cps_2024 and "
+            "enhanced_cps_2024 load the frozen policyengine-us-data "
+            "artifacts for comparison."
         ),
     )
     args = parser.parse_args(argv)
