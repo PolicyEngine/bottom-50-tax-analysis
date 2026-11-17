@@ -118,8 +118,8 @@ boundaries — so it unit-tests against hand-computed populations
   That regression was never fixed in `policyengine-us-data` — the repo
   was **archived in July 2026** with the broken `enhanced_cps_2024.h5`
   frozen as the final artifact. The successor certified US dataset lives
-  in [PolicyEngine/microcosm](https://github.com/PolicyEngine/microcosm)
-  (formerly populace), which restored pinned US fiscal calibration
+  in [PolicyEngine/microcosm](https://github.com/PolicyEngine/microcosm),
+  which restored pinned US fiscal calibration
   targets (SOI income tax / AGI, plus a macro-realism gate) in
   [microcosm#44](https://github.com/PolicyEngine/microcosm/pull/44)
   (merged June 2026).
